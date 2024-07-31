@@ -1,0 +1,65 @@
+inherit: [install]
+
+buildSetup: |
+
+   # loop over all dependencies and build GPR_PROJECT_PATH and LARGS
+   GPR_PRJ=""
+   LARGS=()
+   for i in "${@:2}" ; do
+      if [ -e $i/.gpr_project ]; then
+         . $i/.gpr_project
+         # now ADA PPRJECT PATH needs to be prefixed by the dist folder
+         OLD_IFS="${IFS:-" "}"
+         IFS=":"
+         for P in ${GPR_PROJECT_PATH}; do
+            GPR_PRJ="$GPR_PRJ:$i/${P}"
+         done
+         IFS="${OLD_IFS}"
+      else
+         # for gprbuild components we do not need additional linker arguments
+         for j in lib usr/lib ; do
+            if [[ -d "$i/$j" ]] ; then
+               LARGS+=(-L$i/$j)
+               if compgen -G "$i/$j/*.so" >/dev/null ; then
+                  LARGS+=(-Wl,-rpath-link=$i/$j)
+               fi
+            fi
+         done
+      fi
+   done
+   export GPR_PROJECT_PATH="${GPR_PRJ}"
+
+   if [ ${#LARGS[@]} -ne 0 ]; then
+     export LARGS
+     export LARGS_AS_STRING="${LARGS[@]}"
+   fi
+
+packageScript: |
+   _GPR_BUILD_PATH=$1
+   gprInstallPackageDev () {
+      rm -rf .gpr_project
+      GPR_PROJECT_PATH=""
+
+      installCopy "${1:-${_GPR_BUILD_PATH}/install}/" "${@:2}" \
+            "/" "/include/***" \
+            /lib/ \
+            /lib/zfp /lib/rts \
+            "/lib/zfp/***" "/lib/rts/***" \
+            "/lib/*.a" "/lib/*.so*" \
+            "*.gpr" \
+            "/usr" "usr/include/***" \
+            "/usr/lib/" \
+            "/usr/lib/***" \
+            "/usr/lib/*.ali" \
+            "/usr/**/*.a" "/usr/**/*.so*" \
+            "/usr/share" "/usr/share/gpr"  \
+            "/usr/share/gpr/*.gpr" \
+            "!*"
+
+      for GPR in $(find . -name "*.gpr" -printf '%h\n' | uniq); do
+         [ ! -z ${GPR_PROJECT_PATH} ] && GPR_PROJECT_PATH+=":"
+         GPR_PROJECT_PATH+="${GPR}"
+      done
+      # installPackageDev "${@:1}" "/usr/lib/zfp/***" "/usr/lib/rts/***"
+      echo "GPR_PROJECT_PATH=${GPR_PROJECT_PATH}" >> .gpr_project
+   }

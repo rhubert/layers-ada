@@ -1,0 +1,27 @@
+inherit: [gpr]
+
+metaEnvironment:
+  PD: "GPRbuild is an advanced build system designed to help automate
+       the construction of multi-language systems."
+  PV: "23.0.0"
+
+checkoutSCM:
+  scm: url
+  url: https://github.com/AdaCore/gprbuild/archive/refs/tags/v${PV}.tar.gz
+  digestSHA256: 141b403ea8a3f82b58b6a8690f8409fe295f3692b667ba3ec487fafcbd26e389
+  stripComponents: 1
+
+depends:
+  - adacore::xmlada-dev
+
+multiPackage:
+  libgpr-dev:
+    buildTools: [target-toolchain]
+    buildScript: |
+      rm -rf install && mkdir -p install
+      make -f $1/Makefile prefix=$(pwd)/install/usr setup
+      make -f $1/Makefile libgpr.build
+      make -f $1/Makefile libgpr.install DESTDIR=$(pwd)/install
+    provideDeps: ['*-dev']
+    packageScript:
+      gprInstallPackageDev

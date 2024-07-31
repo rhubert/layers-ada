@@ -1,0 +1,10 @@
+buildVars: [RTS]
+buildTools: [gnat-target-toolchain, gprbuild]
+buildSetup: |
+   generateDefaultGpr () {
+     gprconfig --batch --target=${GPR_TARGET:-x86_64-linux} \
+             --config=Ada,,${RTS:-default},,GNAT \
+             -o default.cgpr
+     # remove Run_Path (RPATH) settings as we don't want to have the RPATH set.
+     sed -i '/Run_Path/d' default.cgpr
+   }
