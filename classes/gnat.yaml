@@ -1,5 +1,5 @@
 buildVars: [RTS]
-buildTools: [gnat-target-toolchain, gprbuild]
+buildTools: [target-toolchain, gprbuild]
 buildSetup: |
    generateDefaultGpr () {
      gprconfig --batch --target=${GPR_TARGET:-x86_64-linux} \

@@ -1,4 +1,4 @@
-inherit: [gpr]
+inherit: [gpr, make]
 
 metaEnvironment:
   PD: "GPRbuild is an advanced build system designed to help automate
