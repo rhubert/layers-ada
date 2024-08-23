@@ -1,1 +1,4 @@
 bobMinimumVersion: "0.24"
+
+plugins:
+  - als

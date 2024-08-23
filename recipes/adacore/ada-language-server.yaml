@@ -1,0 +1,20 @@
+metaEnvironment:
+  PD: "Ada Language Server"
+  PV: "24.0.6"
+
+checkoutSCM:
+  scm: url
+  url: ${GITHUB_MIRROR}/AdaCore/ada_language_server/releases/download/${PV}/als-${PV}-Linux_amd64.zip
+  digestSHA256: "1fb486153595cfbca14f9f62e297224abd199c2053028cfb7de5fb7b93aaf2ce"
+  extract: False
+
+buildVars: [PV]
+buildScript: |
+  unzip $1/als-${PV}-Linux_amd64.zip
+
+packageScript: |
+  cp $1/x64/linux/ada_language_server .
+
+provideTools:
+  ada_language_server: "."
+

@@ -1,5 +1,6 @@
 buildVars: [RTS]
 buildTools: [target-toolchain, gprbuild]
+buildToolsWeak: [ada_language_server]
 buildSetup: |
    generateDefaultGpr () {
      gprconfig --batch --target=${GPR_TARGET:-x86_64-linux} \
