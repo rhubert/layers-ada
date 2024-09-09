@@ -1,0 +1,45 @@
+inherit: [patch, install]
+
+metaEnvironment:
+  PD: "GPRbuild is an advanced build system designed to help automate
+       the construction of multi-language systems."
+  PV: "23.0.0"
+
+checkoutSCM:
+  -
+    scm: url
+    url: https://github.com/AdaCore/gprbuild/archive/refs/tags/v${PV}.tar.gz
+    digestSHA256: 141b403ea8a3f82b58b6a8690f8409fe295f3692b667ba3ec487fafcbd26e389
+    stripComponents: 1
+    dir: gprbuild
+  -
+    scm: url
+    url: https://github.com/AdaCore/xmlada/archive/refs/tags/v${PV}.tar.gz
+    digestSHA256: 66245a68f2e391c8dc8dc50d6d5f109eb3b371e261d095d2002dff3927dd5253
+    stripComponents: 1
+    dir: xmlada
+  -
+    scm: url
+    url: https://github.com/AdaCore/gprconfig_kb/archive/refs/tags/v${PV}.tar.gz
+    digestSHA256: 182d9108c91390ddd67c841e45a3fc9dd23a94b33d4a1f05ed2788c1fb9b7dd2
+    stripComponents: 1
+    dir: gprconfig_kb
+
+checkoutDeterministic: True
+checkoutScript: |
+  pushd gprconfig_kb
+  patchApplySeries -p0 $<<gprbuild/gprconfig.patch>>
+  popd
+
+buildVars: [CC, CROSS_COMPILE]
+buildTools: [target-toolchain]
+#buildSetup: |
+   #export GNATMAKE=${CROSS_COMPILE:-}gnatmake
+buildScript: |
+  rsync -a --delete $1/gprbuild/ .
+  ./bootstrap.sh --with-xmlada=$1/xmlada --with-kb=$1/gprconfig_kb \
+    --prefix=./install/usr/
+packageScript: |
+  installPackageTgt $1/install/
+provideTools:
+  gprbuild: "usr/bin"

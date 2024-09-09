@@ -1,0 +1,10 @@
+--- db/compilers.xml.orig	2024-08-27 15:06:38.363743376 +0200
++++ db/compilers.xml	2024-08-27 15:07:09.052322372 +0200
+@@ -189,6 +189,7 @@
+     </variable>
+     <runtimes default="default,kernel,native">
+        <directory group="default" >\.\./lib(32|64)?/gcc(-lib)?/$TARGET/($gcc_version|$gcc_version_major)/adalib/</directory>
++       <directory group="default" >/toolchain/lib(32|64)?/gcc(-lib)?/$TARGET/($gcc_version|$gcc_version_major)/adalib/</directory>
+        <directory group="default" contents="^rts-">\.\./lib(32|64)?/gcc(-lib)?/$TARGET/($gcc_version|$gcc_version_major)/ada_object_path</directory>
+        <directory group="4" >\.\./lib(32|64)?/gcc(-lib)?/$TARGET/($gcc_version|$gcc_version_major)/rts-(.*)/adalib/</directory>
+        <directory group="2" >\.\./$TARGET/lib(32|64)?/gnat/(.*)/adalib/</directory>

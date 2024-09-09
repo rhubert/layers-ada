@@ -14,14 +14,26 @@ checkoutSCM:
 depends:
   - adacore::xmlada-dev
 
+buildTools: [gprbuild, target-toolchain]
 multiPackage:
   libgpr-dev:
-    buildTools: [target-toolchain]
     buildScript: |
       rm -rf install && mkdir -p install
       make -f $1/Makefile prefix=$(pwd)/install/usr setup
       make -f $1/Makefile libgpr.build
-      make -f $1/Makefile libgpr.install DESTDIR=$(pwd)/install
+      makeSequential -f $1/Makefile libgpr.install DESTDIR=$(pwd)/install
     provideDeps: ['*-dev']
     packageScript:
       gprInstallPackageDev
+
+  tool:
+    buildScript: |
+      rm -rf install && mkdir -p install
+      make -f $1/Makefile prefix=$(pwd)/install/usr setup
+      make -f $1/Makefile all
+      makeSequential -f $1/Makefile install DESTDIR=$(pwd)/install
+    packageScript: |
+      installPackageTgt $1/install/
+      cp ${BOB_TOOL_PATHS[gprbuild]}/../share/gprconfig usr/share/ -r
+    provideTools:
+      gprbuild: "usr/bin"
