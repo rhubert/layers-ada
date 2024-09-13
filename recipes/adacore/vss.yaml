@@ -1,0 +1,29 @@
+inherit: [make, gpr, install]
+
+metaEnvironment:
+   PD: "A high level string and text processing library"
+   LICENCE: "Apache-2.0-with-LLVM-Exceptions"
+   PV: "24.2"
+
+depends:
+   - adacore::xmlada-dev
+
+checkoutSCM:
+   scm: git
+   url: https://github.com/AdaCore/VSS.git
+   commit: 1c49a43be7e29b609b024aec438e65e0c46aff0d
+   branch: "${PV}"
+
+buildTools: [target-toolchain]
+buildScript: |
+   rsync -a --delete $1/ .
+   makeParallel PREFIX=$(pwd)/install/usr/ build-all-libs
+   makeSequential PREFIX=$(pwd)/install/usr/ install-all-libs
+
+multiPackage:
+   dev:
+      packageScript: |
+         gprInstallPackageDev
+   tgt:
+      packageScript: |
+         installPackageTgt $1/install

@@ -1,0 +1,52 @@
+inherit: [gpr, install, cpackage]
+
+metaEnvironment:
+   PKG_DESCRIPTION: "GNAT Component Collection Bindings"
+   PKG_LICENSE: "GPL-3.0-or-later"
+   PKG_VERSION: "24.2-20240606-162FD"
+   COPYRIGHT: "Copyright (C) 2003-2023 AdaCore"
+
+depends:
+   - adacore::gnatcoll-dev
+   - libs::gmp-dev
+   - use: []
+     depends:
+        - libs::gmp-tgt
+        - adacore::gnatcoll-tgt
+
+checkoutSCM:
+   scm: git
+   url: "https://github.com/AdaCore/gnatcoll-bindings.git"
+   branch: "24.2"
+   commit: f988b2052d01310b830d63e86e19c8dc77d382a2
+
+buildTools: [target-toolchain]
+buildScript: |
+   mkdir -p build
+   gprbuild -p -P $1/iconv/gnatcoll_iconv.gpr \
+            --relocate-build-tree=build \
+            -XGNATCOLL_ICONV_OPT=""
+   gprinstall $1/iconv/gnatcoll_iconv.gpr \
+            --relocate-build-tree=build \
+           -p \
+           -XGNATCOLL_ICONV_OPT="" \
+           --prefix=$(pwd)/install/usr
+
+   gprbuild -p -P $1/gmp/gnatcoll_gmp.gpr \
+            --relocate-build-tree=build \
+            -XGNATCOLL_GMP_OPT=""
+   gprinstall $1/gmp/gnatcoll_gmp.gpr \
+            --relocate-build-tree=build \
+           -p \
+           -XGNATCOLL_GMP_OPT="" \
+           --prefix=$(pwd)/install/usr
+
+multiPackage:
+   dev:
+      provideDeps: ['*-dev']
+      packageScript: |
+         gprInstallPackageDev
+   tgt:
+      provideDeps: ['*-tgt']
+      packageScript: |
+         installPackageTgt $1/install

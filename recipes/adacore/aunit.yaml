@@ -1,0 +1,28 @@
+inherit: [make, gpr]
+
+checkoutSCM:
+  scm: git
+  url: https://github.com/AdaCore/aunit.git
+  tag: v24.0.0
+  commit: 6a6174b3020facd4f85a53dd6fb586635f72f63b
+
+buildTools: [target-toolchain]
+buildScript: |
+  gprbuild -XAUNIT_BUILD_MODE=Install -XAUNIT_RUNTIME=full \
+    -XAUNIT_PLATFORM=native -p -P $1/lib/gnat/aunit.gpr \
+    --relocate-build-tree=build
+  gprinstall -P $1/lib/gnat/aunit.gpr \
+      -XAUNIT_BUILD_MODE=Install \
+      -XAUNIT_RUNTIME=full \
+      -XAUNIT_PLATFORM=native \
+      --relocate-build-tree=build \
+      --prefix="install/usr" \
+      -m \
+      -p \
+      -f
+
+multiPackage:
+  dev:
+    packageScript: |
+      gprInstallPackageDev
+

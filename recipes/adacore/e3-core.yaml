@@ -1,0 +1,17 @@
+metaEnvironment:
+   PV: "22.6.0"
+
+checkoutSCM:
+   scm: git
+   url: https://github.com/AdaCore/e3-core.git
+   tag: "v${PV}"
+   commit: 037d6a38367aae4993b0aa913d853cf33d871172
+
+buildTools: [python3]
+buildScript: |
+   rsync -a --delete $1/ .
+   mkdir -p install
+   python3 -m pip install .
+
+packageScript: |
+   rsync -a --delete $1/install/ .

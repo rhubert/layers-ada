@@ -1,0 +1,52 @@
+inherit: [python3-usr, gpr]
+
+metaEnvironment:
+   PKG_VERSION: "24.0.0"
+
+checkoutSCM:
+   - scm: url
+     url: "https://github.com/AdaCore/libadalang/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+     digestSHA256: "418a6086cf5e790f66491ec78ae6979ef6e2dff3071b2c09d3f2dbd002471488"
+     extract: false
+
+depends:
+  - adacore::gpr-dev
+  - adacore::langkit-dev
+  - adacore::gnatcoll-dev
+  - adacore::gnatcoll-bindings-dev
+  - use: []
+    depends:
+      - adacore::gnatcoll-tgt
+      - adacore::gnatcoll-bindings-tgt
+
+buildVars: [PKG_VERSION]
+buildToolsWeak: [target-toolchain]
+buildScript: |
+   rm -rf *
+   mkdir -p install
+   tar --strip-components=1 -xf $1/v${PKG_VERSION}.tar.gz
+
+   python3 manage.py generate
+   python3 manage.py build --library-types=static \
+      --disable-all-mains \
+      --gargs="-largs -L${BOB_DEP_PATHS[libs::gmp-dev]}/usr/lib"
+   python3 manage.py install $(pwd)/install/ \
+      --disable-all-mains \
+      --library-types=static
+
+multiPackage:
+   dev:
+      provideDeps: ['*-dev']
+      packageScript: |
+         rsync -aHSK $1/install/* .
+         rm -rf .gpr_project
+         GPR_PROJECT_PATH=""
+         for GPR in $(find . -name "*.gpr" -printf '%h\n' | uniq); do
+            [ ! -z ${GPR_PROJECT_PATH} ] && GPR_PROJECT_PATH+=":"
+            GPR_PROJECT_PATH+="${GPR}"
+         done
+         echo "GPR_PROJECT_PATH=${GPR_PROJECT_PATH}" >> .gpr_project
+   tgt:
+      provideDeps: ['*-tgt']
+      packageScript: |
+         installPackageTgt
