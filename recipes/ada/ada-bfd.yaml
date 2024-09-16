@@ -5,6 +5,10 @@ metaEnvironment:
    LICENCE: "GPLv2"
    PV: "1.3.0"
 
+privateEnvironment:
+   APPLY_LIBTOOL_PATCH: "no"
+   APPLY_UPDATE_CONFIG: "no"
+
 depends:
    - devel::binutils-dev
    - devel::binutils-libiberty-dev
