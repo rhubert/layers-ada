@@ -1,4 +1,4 @@
-inherit: [make, gpr, install]
+inherit: [make, gpr, install, patch]
 metaEnvironment:
    PD: "Libadalang-tools"
    PV: "24.0"
@@ -8,6 +8,10 @@ checkoutSCM:
    url: https://github.com/AdaCore/libadalang-tools.git
    commit: afce20d3bd71e4316450388bd3abac12d42f3bc9
    branch: "${PV}"
+
+checkoutDeterministic: True
+checkoutScript: |
+   patchApplySeries -p1 $<<libadalang-tools/*.patch>>
 
 depends:
  - adacore::libadalang-dev
