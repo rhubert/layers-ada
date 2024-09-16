@@ -1,0 +1,44 @@
+diff --git a/Makefile b/Makefile
+index 735090bc..5497df63 100644
+--- a/Makefile
++++ b/Makefile
+@@ -34,6 +34,7 @@ all:
+ 			-XXMLADA_BUILD=$(LIBRARY_TYPE) \
+ 			-XLALTOOLS_BUILD_MODE=$(BUILD_MODE) \
+ 			-XLALTOOLS_SET=$(LALTOOLS_SET) \
++			$(GPRBUILD_EXTRA) \
+ 			-P $$proj -p -j$(PROCESSORS) ; \
+ 	done
+ 
+@@ -46,7 +47,8 @@ lib:
+ 			rm -f obj/lib/$$kind/*.lexch; \
+ 			gprbuild -v -k \
+ 				-XLIBRARY_TYPE=$$kind \
+-				-XLALTOOLS_BUILD_MODE=$(BUILD_MODE) \
++				-XLALTOOLS\_BUILD_MODE=$(BUILD_MODE) \
++				$(GPRBUILD_EXTRA) \
+ 				-P $$proj -p -j$(PROCESSORS) ; \
+ 		done ; \
+ 	done
+@@ -56,11 +58,12 @@ bin:
+ 	which gprbuild
+ 	which gcc
+ 	for proj in $(BIN_PROJECTS) ; do \
+-		gprbuild -v -k \
++		gprbuild -vh -k \
+ 			-XLIBRARY_TYPE=$(LIBRARY_TYPE) \
+ 			-XXMLADA_BUILD=$(LIBRARY_TYPE) \
+ 			-XLALTOOLS_BUILD_MODE=$(BUILD_MODE) \
+ 			-XLALTOOLS_SET=$(LALTOOLS_SET) \
++			$(GPRBUILD_EXTRA) \
+ 			-P $$proj -p -j$(PROCESSORS) ; \
+ 	done
+ 
+@@ -74,6 +77,7 @@ testsuite_drivers:
+ 			-XXMLADA_BUILD=$(LIBRARY_TYPE) \
+ 			-XLALTOOLS_BUILD_MODE=$(BUILD_MODE) \
+ 			-XLALTOOLS_SET=$(LALTOOLS_SET) \
++			$(GPRBUILD_EXTRA) \
+ 			-P $$proj -p -j$(PROCESSORS) ; \
+ 	done
+ 
