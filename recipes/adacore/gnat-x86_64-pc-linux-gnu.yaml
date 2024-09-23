@@ -29,6 +29,7 @@ packageScript: |
   rsync -a ${BOB_TOOL_PATHS[host-compat-toolchain]}/${TOOLCHAIN_SYSROOT}/ sysroot/
 
   pushd bin
+  rm x86_64-pc-linux-gnu*
   for i in gcc cpp g++; do
     mv $i ${i}_real
     cat > $i << EOF
