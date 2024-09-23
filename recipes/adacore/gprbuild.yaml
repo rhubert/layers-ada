@@ -28,7 +28,19 @@ multiPackage:
 
   tool:
     buildScript: |
+      which gcc
+      file $(which gcc)
+      cat $(which gcc)
+
+      ls $(dirname $(which gcc))/../sysroot/usr/include
+      echo | x86_64-bob_compat_gnat-linux-gnu-gcc -E -Wp,-v -
+
       rm -rf install && mkdir -p install
+
+      gprbuild -p -m  --relocate-build-tree -j0 -XBUILD=production  \
+        $1/gprbuild.gpr -XLIBRARY_TYPE=static -XXMLADA_BUILD=static \
+        -vh
+
       make -f $1/Makefile prefix=$(pwd)/install/usr setup
       make -f $1/Makefile all
       makeSequential -f $1/Makefile install DESTDIR=$(pwd)/install
