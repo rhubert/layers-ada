@@ -1,0 +1,52 @@
+inherit: [make, gpr, "basement::bits::libs"]
+
+checkoutSCM:
+  scm: git
+  url: https://github.com/rhubert/aunit.git
+  commit: aebfcf7705d5b6adc30cbc440b0f3d235e9a6b50
+  #url: https://github.com/AdaCore/aunit.git
+  #tag: v24.0.0
+  #commit: 6a6174b3020facd4f85a53dd6fb586635f72f63b
+
+depends:
+  - if: $(ne,${RTS:-UNSET},UNSET)
+    name: ${RTS}
+
+buildTools: [target-toolchain, gprbuild]
+buildVars: [RTS, AUTOCONF_TARGET, AUTOCONF_HOST]
+buildSetup: |
+  export AUNIT_BUILD_MODE=Install
+  CONF_ARGS=()
+  CARGS=()
+  if [[ ${RTS:-UNSET} == UNSET ]]; then
+    export AUNIT_RUNTIME=full
+  else
+    CONF_ARGS+=("--RTS=$2/usr/include/rts/")
+    export AUNIT_RUNTIME=zfp-cross
+    # avoid using memcpy / strlen from stdlib
+    CARGS+=("-fno-tree-loop-distribution")
+    CARGS+=("-fno-tree-loop-distribute-patterns")
+  fi
+  if basementBitsCrossCompiling; then
+    CONF_ARGS+=("--target=${AUTOCONF_HOST}")
+  else
+    export AUNIT_PLATFORM=native
+  fi
+
+buildScript: |
+  gprbuild -p -P $1/lib/gnat/aunit.gpr \
+    --relocate-build-tree=build \
+    ${CONF_ARGS[@]} \
+   -cargs ${CARGS[@]}
+  gprinstall -P $1/lib/gnat/aunit.gpr \
+      --relocate-build-tree=build \
+      ${CONF_ARGS[@]} \
+      --prefix="install/usr" \
+      -m \
+      -p \
+      -f
+
+multiPackage:
+  dev:
+    packageScript: |
+      gprInstallPackageDev
