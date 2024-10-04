@@ -1,0 +1,55 @@
+inherit: [make, gpr, python3-pkg]
+
+depends:
+  - adacore::AdaSAT-dev
+  - adacore::e3-core
+  - adacore::gnatcoll-dev
+  - adacore::gnatcoll-bindings-dev
+  - adacore::langkit-dev
+  - libs::gmp-dev
+  - python::docutils
+  - python::funcy
+  - python::mako
+  - use: []
+    depends:
+      - libs::gmp-tgt
+      - adacore::gnatcoll-tgt
+
+checkoutSCM:
+  - scm: git
+    url: https://github.com/AdaCore/gpr.git
+    commit: 880f16d7959a624429bb1716cf40a2d092f5542a
+    branch: "24.2"
+    dir: gpr
+  - scm: url
+    url: https://github.com/AdaCore/gprconfig_kb/archive/refs/tags/v23.0.0.tar.gz
+    digestSHA256: 182d9108c91390ddd67c841e45a3fc9dd23a94b33d4a1f05ed2788c1fb9b7dd2
+    stripComponents: 1
+    dir: gprconfig_kb
+
+buildTools: [target-toolchain]
+buildScript: |
+  rm -rf *
+  rsync -a $1/gpr/ .
+  export LDFLAGS=-L${BOB_DEP_PATHS[libs::gmp-dev]}/usr/lib
+  sed -i 's/GPRBUILD_OPTIONS=/GPRBUILD_OPTIONS=-largs ${LDFLAGS} -gargs/g' Makefile
+  make setup PYTHON=python3 \
+    GPR2KBDIR=$1/gprconfig_kb/db ENABLE_SHARED=no
+  makeParallel
+  # WARNING: do not use make install* as it modifies files in the toolchain!
+  gprinstall -p -f  -XGPR2_BUILD=release \
+    -XGPR2_EDGE_TOOLS_PREFIX=gpr2 \
+    -XBUILD_ROOT="$(pwd)/.build" \
+    --prefix="$(pwd)/install/usr" \
+    -XLIBRARY_TYPE=static -XXMLADA_BUILD=static \
+  	--build-name=static \
+  	--build-var=LIBRARY_TYPE \
+  	--build-var=GPR2_LIBRARY_TYPE \
+  	./gpr2.gpr
+
+multiPackage:
+  dev:
+    provideDeps: ["*-dev"]
+    packageScript: gprInstallPackageDev
+  tgt:
+    packageScript: gprInstallPackageTgt
