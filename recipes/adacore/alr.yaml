@@ -1,0 +1,19 @@
+metaEnvironment:
+  PV: "2.0.1"
+
+checkoutSCM:
+  scm: url
+  url: https://github.com/alire-project/alire/releases/download/v${PV}/alr-${PV}-bin-x86_64-linux.zip
+  digestSHA1: "76d883d2b61f80b509451ed5ffbc29e1fb43590a"
+  extract: False
+
+buildVars: [PV]
+buildScript: |
+  rm -rf *
+  unzip $1/alr-${PV}-bin-x86_64-linux.zip
+
+packageScript: |
+  rsync -a --delete $1/ .
+
+provideTools:
+  alr: "bin"
