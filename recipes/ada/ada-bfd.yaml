@@ -1,0 +1,67 @@
+inherit: [autotools, gpr]
+
+metaEnvironment:
+  PD: "Ada binding for the GNU Binutils BFD library"
+  LICENCE: "GPLv2"
+  PV: "1.3.0"
+
+privateEnvironment:
+  APPLY_LIBTOOL_PATCH: "no"
+  APPLY_UPDATE_CONFIG: "no"
+
+depends:
+  - devel::binutils-dev
+  - devel::binutils-libiberty-dev
+  - libs::zlib-dev
+
+checkoutSCM:
+  scm: git
+  url: https://github.com/stcarrez/ada-bfd.git
+  tag: "${PV}"
+  commit: bf2e3c1515ff50293ee40678304cabef7df919cb
+
+buildVars: [AUTOCONF_BUILD, AUTOCONF_HOST]
+buildScript: |
+  rsync -a --delete $1/ .
+
+  sed -i '35i pragma Linker_Options ("-lsframe");' src/bfd-files.adb
+  sed -i '36i pragma Linker_Options ("-lz");' src/bfd-files.adb
+
+  DESTDIR=$(pwd)/dist/usr
+  export CFLAGS="${CFLAGS} -I${BOB_DEP_PATHS['devel::binutils-dev']}/usr/include"
+  export CFLAGS="${CFLAGS} -I${BOB_DEP_PATHS['devel::binutils-libiberty-dev']}/usr/include"
+
+  ./configure \
+    ${AUTOCONF_BUILD:+--build=${AUTOCONF_BUILD}} \
+    ${AUTOCONF_HOST:+--host=${AUTOCONF_HOST}} \
+    --includedir=${BOB_DEP_PATHS['devel::binutils-dev']}/usr/include \
+    --includedir=${BOB_DEP_PATHS['devel::binutils-libiberty-dev']}/usr/include \
+    --libdir=${BOB_DEP_PATHS['devel::binutils-dev']}/usr/lib \
+    --libdir=${BOB_DEP_PATHS['devel::binutils-libiberty-dev']}/usr/lib \
+    --libdir=${BOB_DEP_PATHS['libs::zlib-dev']}/usr/lib \
+    --prefix=${DESTDIR}
+
+  # disable tests
+  sed -i '/build-test:/,+1d' Makefile
+  sed -i '/test:/,+2d' Makefile
+
+  makeParallel MAKE_ARGS="-cargs:C -I${BOB_DEP_PATHS['devel::binutils-dev']}/usr/include \
+                  -I${BOB_DEP_PATHS['devel::binutils-libiberty-dev']}/usr/include \
+           -largs -L${BOB_DEP_PATHS['libs::zlib-dev']}/usr/lib \
+                  -L${BOB_DEP_PATHS['devel::binutils-dev']}/usr/lib \
+                  -L${BOB_DEP_PATHS['devel::binutils-libiberty-dev']}/usr/lib \
+           -gargs"
+  makeSequential install
+
+  # make ada.bfd depend on libbfd
+  #sed -i "1iwith \"libbfd\";"  ${DESTDIR}/share/gpr/bfdada.gpr
+
+multiPackage:
+  dev:
+    provideDeps: ['*-dev']
+    packageScript: |
+      gprInstallPackageDev $1/dist/
+  tgt:
+    provideDeps: ['*-tgt']
+    packageScript: |
+      gprInstallPackageTgt $1/dist/usr
