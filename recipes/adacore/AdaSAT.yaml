@@ -1,0 +1,32 @@
+inherit: [gpr]
+
+metaEnvironment:
+  PKG_VERSION: "24.2"
+
+checkoutSCM:
+  scm: git
+  url: https://github.com/AdaCore/adasat.git
+  branch: "${PKG_VERSION}"
+  commit: f20d814a4b26508d0dd6ee48a92bc560b122dad5
+
+buildTools: [target-toolchain]
+buildScript: |
+  mkdir -p build install
+  gprbuild -P $1/adasat.gpr -p -j4 \
+      --relocate-build-tree="$(pwd)/build" \
+      -XLIBRARY_TYPE=static \
+      -XBUILD_MODE=dev
+
+  gprinstall -P $1/adasat.gpr -p -f \
+         -XLIBRARY_TYPE=static \
+         -XBUILD_MODE=dev \
+         --relocate-build-tree="$(pwd)/build" \
+         --prefix="$(pwd)/install/usr" \
+         --build-name=static \
+         --build-var=LIBRARY_TYPE
+
+multiPackage:
+  dev:
+    packageScript: gprInstallPackageDev
+  tgt:
+    packageScript: gprInstallPackageTgt
