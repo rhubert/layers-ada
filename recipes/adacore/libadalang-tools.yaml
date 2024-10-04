@@ -1,0 +1,31 @@
+inherit: [make, gpr, install, patch]
+metaEnvironment:
+  PD: "Libadalang-tools"
+  PV: "24.0"
+
+checkoutSCM:
+  - scm: git
+    #url: https://github.com/AdaCore/libadalang-tools.git
+    url: https://github.com/rhubert/libadalang-tools.git
+    commit: b8c8f946332b1873eb5b0567461da0747a06a0e2
+    branch: "v${PV}.0+gprbuild_extra"
+
+depends:
+  - adacore::libadalang-dev
+  - adacore::templates_parser
+  - adacore::vss-dev
+  - libs::gmp-dev
+
+buildTools: [target-toolchain]
+buildScript: |
+  rsync -a --delete $1/ .
+  GPRBUILD_EXTRA="-largs -L${BOB_DEP_PATHS[libs::gmp-dev]}/usr/lib -gargs" \
+  makeParallel BUILD_MODE=prod bin
+  makeSequential BUILD_MODE=prod DESTDIR=install/usr install-bin-strip
+
+packageScript: |
+  installPackageTgt $1/install/
+
+provideTools:
+  libadalang-tools:
+    path: "usr/bin"
