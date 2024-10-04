@@ -1,0 +1,119 @@
+# download gnat toolchain from alr + add the host-compat sysroot
+# to build a host-compat toolchain with gnat
+# This toolchain is used to build host executables and should not be used to
+# compile for target.
+
+shared: True
+
+environment:
+  AUTOCONF_TARGET: "$(gen-autoconf,bob_compat_gnat)"
+  GNAT_NAME: "gnat_native"
+  GNAT_VERSION: "13.2.2"
+  GPRBUILD_VERSION: "22.0.1"
+
+checkoutTools: [alr]
+checkoutVars: [GNAT_NAME, GNAT_VERSION, GPRBUILD_VERSION]
+checkoutDeterministic: True
+checkoutScript: |
+  rm -rf alired && mkdir -p alired && pushd alired
+  alr install --prefix=$(pwd) ${GNAT_NAME}=${GNAT_VERSION} gprbuild=${GPRBUILD_VERSION}
+  popd
+
+buildScript: |
+  ln -s $1/alired
+
+packageTools: [host-compat-toolchain]
+packageVars: [AUTOCONF_TARGET, TOOLCHAIN_SYSROOT]
+packageScript: |
+  rsync -a --delete $1/alired/ .
+
+  # add the host-compat sysroot
+
+  mkdir -p sysroot
+  rsync -a ${BOB_TOOL_PATHS[host-compat-toolchain]}/${TOOLCHAIN_SYSROOT}/ sysroot/
+
+  pushd bin
+  rm x86_64-pc-linux-gnu*
+  for i in gcc cpp g++; do
+    mv $i ${i}_real
+    cat > $i << EOF
+  #!/bin/bash
+  SCRIPT_PATH=\$(dirname \$(realpath "\${BASH_SOURCE[0]}"))
+  #ADDITIONAL_ARGS+=(-Wl,-rpath-link=\${SCRIPT_PATH}/../sysroot/usr/lib)
+  ADDITIONAL_ARGS+=(--sysroot=\${SCRIPT_PATH}/../sysroot)
+  ADDITIONAL_ARGS+=(-I "\${SCRIPT_PATH}/../sysroot//usr/include")
+  exec \${SCRIPT_PATH}/${i}_real \
+    \${ADDITIONAL_ARGS[@]} \
+    "\$@"
+  EOF
+    ln -snf $i ${AUTOCONF_TARGET}-${i}
+    chmod +x $i
+  done
+
+  for i in ld; do  #collect2?
+    mv "$i" "${i}_real"
+    cat > $i << EOF
+  #!/bin/bash
+  SCRIPT_PATH=\$(dirname \$(realpath "\${BASH_SOURCE[0]}"))
+  ADDITIONAL_ARGS=(--sysroot=\${SCRIPT_PATH}/../sysroot/)
+  exec \${SCRIPT_PATH}/${i}_real \${ADDITIONAL_ARGS[@]} "\$@"
+  EOF
+    chmod +x $i
+  done
+
+  for i in gpr*; do
+    ln -snf $i ${AUTOCONF_TARGET}-$i
+  done
+  for i in gnat*; do
+    ln -snf $i ${AUTOCONF_TARGET}-$i
+  done
+
+  TOOLS=(addr2line size strings gprof readelf objdump)
+  for i in ${TOOLS[@]} ; do
+    mv $i ${AUTOCONF_TARGET}-$i
+  done
+
+  for i in nm objcopy; do
+    cp $i ${AUTOCONF_TARGET}-$i
+  done
+
+  for i in gpr*; do
+    ln -snf $i ${AUTOCONF_TARGET}-$i
+  done
+  for i in gnat*; do
+    ln -snf $i ${AUTOCONF_TARGET}-$i
+  done
+
+  # prefix some tools with AUTOCONF_TARGET
+  TOOLS=(ar as gdb ld ranlib strip)
+  for T in ${TOOLS[@]}; do
+    if [[ ! -e ${AUTOCONF_TARGET}-${T} ]]; then
+      ln -snf ${T} ${AUTOCONF_TARGET}-${T}
+    fi
+  done
+  popd
+
+provideTools:
+  host-compat-gnat-toolchain:
+    path: "bin"
+    environment:
+      # usual compiler variables
+      AR: "${AUTOCONF_TARGET}-ar"
+      AS: "${AUTOCONF_TARGET}-as"
+      CC: "${AUTOCONF_TARGET}-gcc"
+      CPP: "${AUTOCONF_TARGET}-cpp"
+      CXX: "${AUTOCONF_TARGET}-g++"
+      GDB: "${AUTOCONF_TARGET}-gdb"
+      LD: "${AUTOCONF_TARGET}-ld"
+      NM: "${AUTOCONF_TARGET}-nm"
+      OBJCOPY: "${AUTOCONF_TARGET}-objcopy"
+      OBJDUMP: "${AUTOCONF_TARGET}-objdump"
+      RANLIB: "${AUTOCONF_TARGET}-ranlib"
+      READELF: "${AUTOCONF_TARGET}-readelf"
+      STRIP: "${AUTOCONF_TARGET}-strip"
+
+      ARCH: "${ARCH}"
+      AUTOCONF_BUILD: "${AUTOCONF_TARGET}"
+      AUTOCONF_HOST: "${AUTOCONF_TARGET}"
+      CROSS_COMPILE: "${AUTOCONF_TARGET}-"
+      TOOLCHAIN_SYSROOT: "../sysroot"
