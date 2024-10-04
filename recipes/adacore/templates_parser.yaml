@@ -1,0 +1,27 @@
+inherit: [make, gpr]
+
+metaEnvironment:
+  PD: "Templates_Parser"
+  PV: "24.2"
+
+checkoutSCM:
+  - scm: git
+    url: https://github.com/AdaCore/templates-parser.git
+    commit: 53cff2e1a864f9da270bc610765283dd800f671c
+    branch: "${PV}"
+
+buildTools: [target-toolchain]
+buildScript: |
+  rsync -a --delete $1/ .
+  makeParallel
+  makeSequential prefix=install/usr install
+
+packageScript: |
+  rsync -aHSK $1/install/* .
+  rm -rf .gpr_project
+  GPR_PROJECT_PATH=""
+  for GPR in $(find . -name "*.gpr" -printf '%h\n' | uniq); do
+     [ ! -z ${GPR_PROJECT_PATH} ] && GPR_PROJECT_PATH+=":"
+     GPR_PROJECT_PATH+="${GPR}"
+  done
+  echo "GPR_PROJECT_PATH=${GPR_PROJECT_PATH}" >> .gpr_project
