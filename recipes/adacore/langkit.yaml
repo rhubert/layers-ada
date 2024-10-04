@@ -1,0 +1,46 @@
+inherit: [python3-pkg, gpr, install]
+
+metaEnvironment:
+  PKG_VERSION: "24.2"
+
+depends:
+  - adacore::AdaSAT-dev
+  - adacore::e3-core
+  - python::colorama
+  - python::docutils
+  - python::funcy
+  - python::mako
+  - python::stevedore
+  - python::tqdm
+  - adacore::gnatcoll-dev
+  - adacore::gnatcoll-bindings-dev
+  - use: []
+    depends:
+      - adacore::gnatcoll-tgt
+      - adacore::gnatcoll-bindings-tgt
+
+checkoutSCM:
+  scm: git
+  url: https://github.com/AdaCore/langkit.git
+  branch: "${PKG_VERSION}"
+  commit: 07218ed24a932e747b98416ceae74e1620276ecc
+
+buildTools: [target-toolchain]
+buildScript: |
+  rsync -a --delete $1/ .
+  mkdir -p install
+  python3BuildSetuptools $(pwd)
+  python3 manage.py build-langkit-support --library-types=static
+  python3 manage.py install-langkit-support $(pwd)/install/usr \
+        --library-types=static
+
+multiPackage:
+  dev:
+    provideDeps: ['*-dev', "python*", "adacore::*"]
+    packageScript: |
+      gprInstallPackageDev $1/install
+      rsync -a $1/install/ .
+  tgt:
+    provideDeps: ['*-tgt']
+    packageScript: |
+      gprInstallPackageTgt
