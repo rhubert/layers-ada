@@ -1,0 +1,51 @@
+inherit: [gpr, make]
+
+metaEnvironment:
+  PD: |
+    GPRbuild is an advanced build system designed to help automate the
+    construction of multi-language systems.
+  PV: "23.0.0"
+
+checkoutSCM:
+  scm: url
+  url: https://github.com/AdaCore/gprbuild/archive/refs/tags/v${PV}.tar.gz
+  digestSHA256: 141b403ea8a3f82b58b6a8690f8409fe295f3692b667ba3ec487fafcbd26e389
+  stripComponents: 1
+
+depends:
+  - adacore::xmlada-dev
+
+buildTools: [gprbuild, target-toolchain]
+multiPackage:
+  libgpr-dev:
+    buildScript: |
+      rm -rf install && mkdir -p install
+      make -f $1/Makefile prefix=$(pwd)/install/usr setup
+      make -f $1/Makefile libgpr.build
+      makeSequential -f $1/Makefile libgpr.install DESTDIR=$(pwd)/install
+    provideDeps: ['*-dev']
+    packageScript: gprInstallPackageDev
+
+  tool:
+    buildScript: |
+      which gcc
+      file $(which gcc)
+      cat $(which gcc)
+
+      ls $(dirname $(which gcc))/../sysroot/usr/include
+      echo | x86_64-bob_compat_gnat-linux-gnu-gcc -E -Wp,-v -
+
+      rm -rf install && mkdir -p install
+
+      gprbuild -p -m  --relocate-build-tree -j0 -XBUILD=production  \
+        $1/gprbuild.gpr -XLIBRARY_TYPE=static -XXMLADA_BUILD=static \
+        -vh
+
+      make -f $1/Makefile prefix=$(pwd)/install/usr setup
+      make -f $1/Makefile all
+      makeSequential -f $1/Makefile install DESTDIR=$(pwd)/install
+    packageScript: |
+      gprInstallPackageTgt $1/install/
+      cp ${BOB_TOOL_PATHS[gprbuild]}/../share/gprconfig usr/share/ -r
+    provideTools:
+      gprbuild: "usr/bin"
