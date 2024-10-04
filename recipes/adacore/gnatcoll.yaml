@@ -1,0 +1,36 @@
+inherit: [autotools, gpr, install, make]
+
+metaEnvironment:
+  PKG_DESCRIPTION: "GNAT Component Collection"
+  PKG_LICENSE: "GPL-3.0-or-later AND GCC-exception-3.1"
+  PKG_VERSION: "23.0.0"
+  COPYRIGHT: "Copyright (C) 2003-2021, AdaCore"
+
+depends:
+  - adacore::gprbuild-libgpr-dev
+
+checkoutSCM:
+  scm: url
+  url: "https://github.com/AdaCore/gnatcoll-core/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+  digestSHA256: "a9e57bfaeaa24c23a738e1d60e0c3b775dc9845c9694c8271efca43381fee85f"
+  stripComponents: 1
+
+buildVars: [PKG_VERSION]
+buildScript: |
+  rsync -a --delete $1/ .
+  makeSequential TARGET=${AUTOCONF_HOST} \
+                 ENABLE_SHARED=no \
+                 prefix=$(pwd)/install/usr \
+                 setup
+  sed -i "s/GTARGET=--target=\$(NORMALIZED_TARGET)/GTARGET=--target=${AUTOCONF_HOST}/g" Makefile
+  makeParallel TARGET=${AUTOCONF_HOST}
+  makeSequential TARGET=${AUTOCONF_HOST} install
+
+multiPackage:
+  dev:
+    provideDeps: ['*-dev']
+    packageScript: |
+      gprInstallPackageDev
+  tgt:
+    packageScript: |
+      autotoolsPackageTgt
