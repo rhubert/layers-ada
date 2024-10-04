@@ -1,0 +1,22 @@
+inherit: [autotools, gpr]
+
+metaEnvironment:
+  PKG_VERSION: "23.0.0"
+
+checkoutSCM:
+  scm: url
+  url: https://github.com/AdaCore/xmlada/archive/refs/tags/v${PKG_VERSION}.tar.gz
+  digestSHA256: 66245a68f2e391c8dc8dc50d6d5f109eb3b371e261d095d2002dff3927dd5253
+  extract: False
+
+buildTools: [gprbuild]
+buildVars: [PKG_VERSION]
+buildScript: |
+  tar xvf $1/v${PKG_VERSION}.tar.gz --strip-components=1
+  ./configure --prefix=/usr
+  make
+  makeSequential install DESTDIR=$(pwd)/install
+multiPackage:
+  dev:
+    packageScript: |
+      gprInstallPackageDev
